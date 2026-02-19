@@ -2,6 +2,11 @@
  *SPDX-FileCopyrightText: 2025 M5Stack Technology CO LTD
  *
  *SPDX-License-Identifier: MIT
+ *
+ * Local patch: init() first turns off DACPOWER and sets DAC Mute (DACCONTROL3 bit2) so that
+ * re-init after reboot (ES8388 may still be on with volume 100) does not cause pops. Then
+ * it configures DAC with SoftRamp, volume 0, and leaves DAC muted; DACPOWER is enabled last.
+ * Application enables SoftRamp and unmutes after.
  */
 
 #include "es8388.hpp"
@@ -70,6 +75,7 @@ bool ES8388::init()
 {
     bool res = true;
     /* INITIALIZATION (BASED ON ES8388 USER GUIDE EXAMPLE) */
+
     // Set Chip to Slave
     res &= writeBytes(ES8388_MASTERMODE, 0x00);
     // Power down DEM and STM
@@ -104,31 +110,23 @@ bool ES8388::init()
     res &= writeBytes(ES8388_ADCCONTROL13, 0x06);
     res &= writeBytes(ES8388_ADCCONTROL14, 0xC3);
 
-    /* DAC setting */
-    // Power Up DAC& enable Lout/Rout
-    res &= writeBytes(ES8388_DACPOWER, 0x3F);
-    // SFI setting (i2s mode/16 bit)
+    /* DAC setting: SoftRamp slowest, unmute explicit, volume 0; DACPOWER last so output is off until ready */
     res &= writeBytes(ES8388_DACCONTROL1, 0x18);
-    // DAC MCLK/LCRK ratio (256)
     res &= writeBytes(ES8388_DACCONTROL2, 0x02);
-    // unmute codec
-    res &= writeBytes(ES8388_DACCONTROL3, 0x00);
-    // set DAC digital volume
+    res &= writeBytes(ES8388_DACCONTROL3, 0xE0);  // DACRampRate=11, SoftRamp=1, DACMute=0 (unmute)
     res &= writeBytes(ES8388_DACCONTROL4, 0x05);
     res &= writeBytes(ES8388_DACCONTROL5, 0x05);
-    // Setup Mixer
-    // (reg[16] 1B mic Amp, 0x09 direct;[reg 17-20] 0x90 DAC, 0x50 Mic Amp)
     res &= writeBytes(ES8388_DACCONTROL16, 0x00);
     res &= writeBytes(ES8388_DACCONTROL17, 0xd0);
-    res &= writeBytes(ES8388_DACCONTROL18, 0x38);  //??
-    res &= writeBytes(ES8388_DACCONTROL19, 0x38);  //??
+    res &= writeBytes(ES8388_DACCONTROL18, 0x38);
+    res &= writeBytes(ES8388_DACCONTROL19, 0x38);
     res &= writeBytes(ES8388_DACCONTROL20, 0xd0);
     res &= writeBytes(ES8388_DACCONTROL21, 0x80);
-    // set Lout/Rout Volume -45db
-    res &= writeBytes(ES8388_DACCONTROL24, 0x12);
-    res &= writeBytes(ES8388_DACCONTROL25, 0x12);
+    res &= writeBytes(ES8388_DACCONTROL24, 0x00);  // volume 0 again (precaution)
+    res &= writeBytes(ES8388_DACCONTROL25, 0x00);
     res &= writeBytes(ES8388_DACCONTROL26, 0x00);
     res &= writeBytes(ES8388_DACCONTROL27, 0x00);
+    res &= writeBytes(ES8388_DACPOWER, 0x3F);
 
     /* Power up DEM and STM */
     res &= writeBytes(ES8388_CHIPPOWER, 0x00);
