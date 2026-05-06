@@ -110,10 +110,10 @@ bool ES8388::init()
     res &= writeBytes(ES8388_ADCCONTROL13, 0x06);
     res &= writeBytes(ES8388_ADCCONTROL14, 0xC3);
 
-    /* DAC setting: SoftRamp slowest, unmute explicit, volume 0; DACPOWER last so output is off until ready */
+    /* DAC setting: keep SoftRamp defaults but hold DAC muted; DACPOWER last so output stays quiet */
     res &= writeBytes(ES8388_DACCONTROL1, 0x18);
     res &= writeBytes(ES8388_DACCONTROL2, 0x02);
-    res &= writeBytes(ES8388_DACCONTROL3, 0xE0);  // DACRampRate=11, SoftRamp=1, DACMute=0 (unmute)
+    res &= writeBytes(ES8388_DACCONTROL3, 0xE2);  // DACRampRate=11, SoftRamp=1, DACMute=1 (mute)
     res &= writeBytes(ES8388_DACCONTROL4, 0x05);
     res &= writeBytes(ES8388_DACCONTROL5, 0x05);
     res &= writeBytes(ES8388_DACCONTROL16, 0x00);
