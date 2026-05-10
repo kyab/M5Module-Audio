@@ -3,10 +3,8 @@
  *
  *SPDX-License-Identifier: MIT
  *
- * Local patch: init() first turns off DACPOWER and sets DAC Mute (DACCONTROL3 bit2) so that
- * re-init after reboot (ES8388 may still be on with volume 100) does not cause pops. Then
- * it configures DAC with SoftRamp, volume 0, and leaves DAC muted; DACPOWER is enabled last.
- * Application enables SoftRamp and unmutes after.
+ * Local patch: init() powers the chip with DAC digital mute asserted (DACCONTROL3 bit1).
+ * Soft ramp is enabled early; application unmutes after I2S is feeding stable PCM.
  */
 
 #include "es8388.hpp"
@@ -113,7 +111,8 @@ bool ES8388::init()
     /* DAC setting: SoftRamp slowest, unmute explicit, volume 0; DACPOWER last so output is off until ready */
     res &= writeBytes(ES8388_DACCONTROL1, 0x18);
     res &= writeBytes(ES8388_DACCONTROL2, 0x02);
-    res &= writeBytes(ES8388_DACCONTROL3, 0xE0);  // DACRampRate=11, SoftRamp=1, DACMute=0 (unmute)
+    // bit5 SoftRamp, bit1 DACMute — keep muted until app unmutes after I2S is running.
+    res &= writeBytes(ES8388_DACCONTROL3, 0xE2);
     res &= writeBytes(ES8388_DACCONTROL4, 0x05);
     res &= writeBytes(ES8388_DACCONTROL5, 0x05);
     res &= writeBytes(ES8388_DACCONTROL16, 0x00);
