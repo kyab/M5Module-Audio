@@ -15,7 +15,9 @@ ES8388::ES8388(TwoWire* wire, uint8_t sda, uint8_t scl, uint32_t speed)
     _sda   = sda;
     _scl   = scl;
     _speed = speed;
-    _wire->begin(_sda, _scl, _speed);
+    // Do not call Wire.begin() here: on ESP32, global ctor runs before hardware is ready,
+    // which can leave TwoWire broken and cause init() to report failure while later I2C still works.
+    // Host must call Wire.begin(sda, scl, speed) before init().
 }
 
 bool ES8388::writeBytes(uint8_t reg, uint8_t data)
