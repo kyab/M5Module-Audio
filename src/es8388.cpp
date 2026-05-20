@@ -115,8 +115,9 @@ bool ES8388::init()
     res &= writeBytes(ES8388_DACCONTROL2, 0x02);
     // bit5 SoftRamp, bit1 DACMute — hold muted until app unmutes after I2S is running.
     res &= writeBytes(ES8388_DACCONTROL3, 0xE2);  // DACRampRate=11, SoftRamp=1, DACMute=1
-    res &= writeBytes(ES8388_DACCONTROL4, 0x05);
-    res &= writeBytes(ES8388_DACCONTROL5, 0x05);
+    // LDACVOL/RDACVOL: 0x00 = 0 dB (max digital gain per datasheet); experiment: prioritize digital head before analog LOUT.
+    res &= writeBytes(ES8388_DACCONTROL4, 0x00);
+    res &= writeBytes(ES8388_DACCONTROL5, 0x00);
     res &= writeBytes(ES8388_DACCONTROL16, 0x00);
     res &= writeBytes(ES8388_DACCONTROL17, 0xd0);
     res &= writeBytes(ES8388_DACCONTROL18, 0x38);
